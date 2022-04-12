@@ -28,5 +28,10 @@ func Run(requestHttp *http.Request, requestStruct any) error {
 			return errors.Wrap(err, "Could decode body")
 		}
 	}
+
+	err = Validate(requestStruct)
+	if err != nil {
+		return err
+	}
 	return nil
 }

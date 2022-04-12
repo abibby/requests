@@ -23,7 +23,7 @@ func TestRun_unmarshals_data_from_query_string(t *testing.T) {
 	assert.Equal(t, "bar", structRequest.Foo)
 }
 
-func TestRun_fails_with_invalid_data_from_query_string(t *testing.T) {
+func TestRun_fails_with_invalid_type_from_query_string(t *testing.T) {
 	type Request struct {
 		Foo int `query:"foo"`
 	}
@@ -54,7 +54,7 @@ func TestRun_unmarshals_json_data_from_body(t *testing.T) {
 	assert.Equal(t, "bar", structRequest.Foo)
 }
 
-func TestRun_fails_with_invalid_data_from_body(t *testing.T) {
+func TestRun_fails_with_invalid_type_from_body(t *testing.T) {
 	type Request struct {
 		Foo int `json:"foo"`
 	}

@@ -32,6 +32,17 @@ func (e ValidationError) AddError(key string, err error) {
 	}
 	e[key] = errs
 }
+func (e ValidationError) Merge(vErr ValidationError) {
+	for k, v := range vErr {
+		errs := e[k]
+		if errs == nil {
+			errs = v
+		} else {
+			errs = append(errs, v...)
+		}
+		e[k] = errs
+	}
+}
 
 func fromSchemaMultiError(err schema.MultiError) ValidationError {
 	validationErr := ValidationError{}

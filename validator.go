@@ -2,13 +2,14 @@ package validate
 
 import (
 	"fmt"
+	"net/http"
 	"reflect"
 	"strings"
 
 	"github.com/pkg/errors"
 )
 
-func Validate(v any) error {
+func Validate(request *http.Request, keys []string, v any) error {
 	s, err := getStruct(reflect.ValueOf(v))
 	if err != nil {
 		return errors.Wrap(err, "Validate mast take a struct or pointer to a struct")
@@ -20,30 +21,11 @@ func Validate(v any) error {
 	for i := 0; i < s.NumField(); i++ {
 		ft := t.Field(i)
 		fv := s.Field(i)
-		validate, ok := ft.Tag.Lookup("validate")
-		if !ok {
-			continue
+		name := getName(ft)
+		err := validateField(name, request, keys, ft, fv)
+		if err != nil {
+			vErr.Merge(err)
 		}
-
-		rulesStr := strings.Split(validate, "|")
-		for _, ruleStr := range rulesStr {
-			ruleName, argsStr := split(ruleStr, ":")
-			args := strings.Split(argsStr, ",")
-
-			rule, ok := getRule(ruleName)
-			if !ok {
-				continue
-			}
-
-			err = rule(fv.Interface(), args)
-			if err != nil {
-				vErr.AddError(getName(ft), err)
-			}
-		}
-
-		// name := getName(ft)
-
-		fmt.Printf("%#v\n", vErr)
 	}
 
 	if vErr.HasErrors() {
@@ -51,6 +33,46 @@ func Validate(v any) error {
 	}
 
 	return nil
+}
+
+func validateField(name string, request *http.Request, keys []string, ft reflect.StructField, fv reflect.Value) ValidationError {
+	validate, ok := ft.Tag.Lookup("validate")
+	if !ok {
+		return nil
+	}
+
+	vErr := ValidationError{}
+
+	rulesStr := strings.Split(validate, "|")
+	for _, ruleStr := range rulesStr {
+		ruleName, argsStr := split(ruleStr, ":")
+		args := strings.Split(argsStr, ",")
+
+		hasKey := includes(keys, name)
+		if !hasKey {
+			if ruleName == "required" {
+				vErr.AddError(name, fmt.Errorf("required"))
+			} else {
+				return nil
+			}
+		} else {
+			rule, ok := getRule(ruleName)
+			if !ok {
+				continue
+			}
+
+			err := rule(&ValidationOptions{
+				Value:     fv.Interface(),
+				Arguments: args,
+				Request:   request,
+			})
+			if err != nil {
+				vErr.AddError(name, err)
+			}
+
+		}
+	}
+	return vErr
 }
 
 func getName(f reflect.StructField) string {
@@ -88,4 +110,13 @@ func split(s, sep string) (string, string) {
 	default:
 		return parts[0], parts[1]
 	}
+}
+
+func includes[T comparable](haystack []T, needle T) bool {
+	for _, v := range haystack {
+		if v == needle {
+			return true
+		}
+	}
+	return false
 }

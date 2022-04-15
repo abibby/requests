@@ -1,7 +1,9 @@
 package validate
 
 import (
+	"bytes"
 	"encoding/json"
+	"io"
 	"net/http"
 
 	"github.com/gorilla/schema"
@@ -11,25 +13,44 @@ import (
 func Run(requestHttp *http.Request, requestStruct any) error {
 	var decoder = schema.NewDecoder()
 	decoder.SetAliasTag("query")
+
+	keys := []string{}
+
 	err := decoder.Decode(requestStruct, requestHttp.URL.Query())
 	if err, ok := err.(schema.MultiError); ok {
 		return fromSchemaMultiError(err)
 	} else if err != nil {
 		return errors.Wrap(err, "Could decode query string")
 	}
+	for k := range requestHttp.URL.Query() {
+		keys = append(keys, k)
+	}
 
 	if requestHttp.Body != http.NoBody {
 		defer requestHttp.Body.Close()
 
-		err := json.NewDecoder(requestHttp.Body).Decode(requestStruct)
+		bodyBuff := bytes.Buffer{}
+		body := io.TeeReader(requestHttp.Body, &bodyBuff)
+
+		err := json.NewDecoder(body).Decode(requestStruct)
 		if err, ok := err.(*json.UnmarshalTypeError); ok {
 			return fromJsonUnmarshalTypeError(err, requestStruct)
 		} else if err != nil {
 			return errors.Wrap(err, "Could decode body")
 		}
+
+		m := map[string]json.RawMessage{}
+		err = json.Unmarshal(bodyBuff.Bytes(), &m)
+		if err != nil {
+			return errors.Wrap(err, "Could decode body")
+		}
+
+		for k := range m {
+			keys = append(keys, k)
+		}
 	}
 
-	err = Validate(requestStruct)
+	err = Validate(requestHttp, keys, requestStruct)
 	if err != nil {
 		return err
 	}

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/abibby/validate/rules"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -15,7 +16,7 @@ func Test_Validate_fails_with_non_struct_arguments(t *testing.T) {
 
 func Test_Validate_generates_errors_on_failing_rules(t *testing.T) {
 	fail := fmt.Errorf("this test always fails")
-	AddRule("should_fail", func(*ValidationOptions) error {
+	rules.AddRule("should_fail", func(*rules.ValidationOptions) error {
 		return fail
 	})
 
@@ -32,7 +33,7 @@ func Test_Validate_generates_errors_on_failing_rules(t *testing.T) {
 
 func Test_Validate_ignores_failing_rules_if_no_value_is_passed(t *testing.T) {
 	fail := fmt.Errorf("this test always fails")
-	AddRule("should_fail", func(*ValidationOptions) error {
+	rules.AddRule("should_fail", func(*rules.ValidationOptions) error {
 		return fail
 	})
 
@@ -46,7 +47,7 @@ func Test_Validate_ignores_failing_rules_if_no_value_is_passed(t *testing.T) {
 }
 
 func Test_Validate_generates_no_errors_on_passing_rules(t *testing.T) {
-	AddRule("should_pass", func(*ValidationOptions) error {
+	rules.AddRule("should_pass", func(*rules.ValidationOptions) error {
 		return nil
 	})
 
@@ -62,10 +63,10 @@ func Test_Validate_generates_no_errors_on_passing_rules(t *testing.T) {
 func Test_Validate_multiple_errors(t *testing.T) {
 	fail1 := fmt.Errorf("this test always fails 1")
 	fail2 := fmt.Errorf("this test always fails 2")
-	AddRule("should_fail_1", func(*ValidationOptions) error {
+	rules.AddRule("should_fail_1", func(*rules.ValidationOptions) error {
 		return fail1
 	})
-	AddRule("should_fail_2", func(*ValidationOptions) error {
+	rules.AddRule("should_fail_2", func(*rules.ValidationOptions) error {
 		return fail2
 	})
 
@@ -83,7 +84,7 @@ func Test_Validate_multiple_errors(t *testing.T) {
 }
 
 func Test_Validate_uses_args(t *testing.T) {
-	AddRule("has_args", func(options *ValidationOptions) error {
+	rules.AddRule("has_args", func(options *rules.ValidationOptions) error {
 		return fmt.Errorf("this test uses args %s", options.Arguments[0])
 	})
 

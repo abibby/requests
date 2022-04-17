@@ -1,7 +1,6 @@
-package validate
+package rules
 
 import (
-	"fmt"
 	"net/http"
 )
 
@@ -22,6 +21,7 @@ type ValidationOptions struct {
 	Value     any
 	Arguments []string
 	Request   *http.Request
+	Name      string
 }
 
 type ValidationRule func(options *ValidationOptions) error
@@ -36,13 +36,11 @@ func AddRule(key string, rule ValidationRule) {
 func initRules() {
 	initalized = true
 
-	AddRule("max", func(options *ValidationOptions) error {
-
-		return fmt.Errorf("test")
-	})
+	initNumericRules()
+	initStringRules()
 }
 
-func getRule(key string) (ValidationRule, bool) {
+func GetRule(key string) (ValidationRule, bool) {
 	if !initalized {
 		initRules()
 	}

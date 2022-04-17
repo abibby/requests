@@ -14,7 +14,10 @@ func Handler[Request any](callback func(w http.ResponseWriter, r *Request)) http
 			json.NewEncoder(w).Encode(err)
 			return
 		} else if err != nil {
-			w.WriteHeader(http.StatusUnprocessableEntity)
+			w.WriteHeader(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(map[string]string{
+				"error": err.Error(),
+			})
 			return
 		}
 		callback(w, &req)

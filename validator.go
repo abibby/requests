@@ -6,6 +6,7 @@ import (
 	"reflect"
 	"strings"
 
+	"github.com/abibby/validate/rules"
 	"github.com/pkg/errors"
 )
 
@@ -56,15 +57,16 @@ func validateField(name string, request *http.Request, keys []string, ft reflect
 				return nil
 			}
 		} else {
-			rule, ok := getRule(ruleName)
+			rule, ok := rules.GetRule(ruleName)
 			if !ok {
 				continue
 			}
 
-			err := rule(&ValidationOptions{
+			err := rule(&rules.ValidationOptions{
 				Value:     fv.Interface(),
 				Arguments: args,
 				Request:   request,
+				Name:      name,
 			})
 			if err != nil {
 				vErr.AddError(name, err)

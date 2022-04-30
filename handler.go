@@ -11,7 +11,9 @@ func Handler[Request any](callback func(w http.ResponseWriter, r *Request)) http
 		err := Run(r, &req)
 		if err, ok := err.(*ValidationError); ok {
 			w.WriteHeader(http.StatusUnprocessableEntity)
-			json.NewEncoder(w).Encode(err)
+			json.NewEncoder(w).Encode(map[string]*ValidationError{
+				"error": err,
+			})
 			return
 		} else if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)

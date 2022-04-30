@@ -1,11 +1,21 @@
 package validate
 
 import (
+	"bytes"
 	_ "embed"
 	"encoding/json"
+	"log"
+	"strings"
+	"text/template"
 
 	"github.com/pkg/errors"
 )
+
+type MessageOptions struct {
+	Attribute string
+	Value     any
+	Arguments []string
+}
 
 type Message struct {
 	Array   string `json:"array"`
@@ -40,4 +50,29 @@ func init() {
 	if err != nil {
 		panic(errors.Wrap(err, "could not parse lang.json"))
 	}
+}
+
+func getMessage(ruleName string, options *MessageOptions) string {
+	defaultMessage := func() string {
+		if len(options.Arguments) == 0 {
+			return ruleName
+		}
+		return ruleName + " " + strings.Join(options.Arguments, ", ")
+	}
+	message, ok := messages[ruleName]
+	if !ok {
+		return defaultMessage()
+	}
+	t, err := template.New(ruleName).Parse(message.String)
+	if err != nil {
+		log.Print(err)
+		return defaultMessage()
+	}
+	buff := &bytes.Buffer{}
+	err = t.Execute(buff, options)
+	if err != nil {
+		log.Print(err)
+		return defaultMessage()
+	}
+	return buff.String()
 }

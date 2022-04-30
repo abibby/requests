@@ -8,7 +8,7 @@ import (
 	"github.com/gorilla/schema"
 )
 
-type ValidationError map[string][]error
+type ValidationError map[string][]string
 
 var _ error = ValidationError{}
 
@@ -20,17 +20,14 @@ func (e ValidationError) HasErrors() bool {
 	return len(e) > 0
 }
 
-func (e ValidationError) AddError(key string, err error) {
-	if err == nil {
-		return
-	}
-	errs := e[key]
-	if errs == nil {
-		errs = []error{err}
+func (e ValidationError) AddError(key string, message string) {
+	messages := e[key]
+	if messages == nil {
+		messages = []string{message}
 	} else {
-		errs = append(errs, err)
+		messages = append(messages, message)
 	}
-	e[key] = errs
+	e[key] = messages
 }
 func (e ValidationError) Merge(vErr ValidationError) {
 	for k, v := range vErr {
@@ -48,11 +45,11 @@ func fromSchemaMultiError(err schema.MultiError) ValidationError {
 	validationErr := ValidationError{}
 	for key, subErr := range err {
 		if err, ok := subErr.(schema.ConversionError); ok {
-			validationErr[key] = []error{
-				fmt.Errorf("should be of type %s", err.Type.String()),
+			validationErr[key] = []string{
+				fmt.Sprintf("should be of type %s", err.Type.String()),
 			}
 		} else {
-			validationErr[key] = []error{subErr}
+			validationErr[key] = []string{subErr.Error()}
 		}
 	}
 	return validationErr
@@ -69,8 +66,8 @@ func fromJsonUnmarshalTypeError(err *json.UnmarshalTypeError, requestStruct any)
 			key = jsonKey
 		}
 	}
-	validationErr[key] = []error{
-		fmt.Errorf("should be of type %s", err.Type.String()),
+	validationErr[key] = []string{
+		fmt.Sprintf("should be of type %s", err.Type.String()),
 	}
 	return validationErr
 }

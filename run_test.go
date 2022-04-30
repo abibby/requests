@@ -2,7 +2,6 @@ package validate
 
 import (
 	"bytes"
-	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -37,7 +36,7 @@ func TestRun_fails_with_invalid_type_from_query_string(t *testing.T) {
 	assert.Error(t, err)
 	assert.IsType(t, ValidationError{}, err)
 	assert.Equal(t, err, ValidationError{
-		"foo": []error{fmt.Errorf("should be of type int")},
+		"foo": []string{"should be of type int"},
 	})
 }
 
@@ -68,6 +67,6 @@ func TestRun_fails_with_invalid_type_from_body(t *testing.T) {
 	assert.Error(t, err)
 	assert.IsType(t, ValidationError{}, err)
 	assert.Equal(t, err, ValidationError{
-		"foo": []error{fmt.Errorf("should be of type int")},
+		"foo": []string{"should be of type int"},
 	})
 }

@@ -2,12 +2,12 @@ package rules
 
 import (
 	"encoding/json"
-	"fmt"
 	"log"
 	"net"
 	"net/mail"
 	"net/url"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
@@ -15,141 +15,132 @@ import (
 )
 
 func initStringRules() {
-	AddStringRule("alpha", func(value string, args []string) error {
+	AddStringRule("alpha", func(value string, args []string) bool {
 		for _, c := range value {
 			if !alpha(c) {
-				return fmt.Errorf("")
+				return false
 			}
 		}
-		return nil
+		return true
 	})
-	AddStringRule("alpha_dash", func(value string, args []string) error {
+	AddStringRule("alpha_dash", func(value string, args []string) bool {
 		for _, c := range value {
 			if !alpha(c) && c != '-' {
-				return fmt.Errorf("")
+				return false
 			}
 		}
-		return nil
+		return true
 	})
-	AddStringRule("alpha_num", func(value string, args []string) error {
+	AddStringRule("alpha_num", func(value string, args []string) bool {
 		for _, c := range value {
 			if !alpha(c) && !numeric(c) {
-				return fmt.Errorf("")
+				return false
 			}
 		}
-		return nil
+		return true
 	})
-	AddStringRule("numeric", func(value string, args []string) error {
+	AddStringRule("numeric", func(value string, args []string) bool {
 		for _, c := range value {
 			if !numeric(c) {
-				return fmt.Errorf("")
+				return false
 			}
 		}
-		return nil
+		return true
 	})
-	AddStringRule("email", func(value string, args []string) error {
+	AddStringRule("email", func(value string, args []string) bool {
 		_, err := mail.ParseAddress(value)
-		return err
+		return err == nil
 	})
-	AddStringRule("ends_with", func(value string, args []string) error {
+	AddStringRule("ends_with", func(value string, args []string) bool {
 		if len(args) < 1 {
 			log.Print("end_with must have 1 argument")
-			return nil
+			return false
 		}
-		if !strings.HasSuffix(value, args[0]) {
-			return fmt.Errorf("")
-		}
-		return nil
+		return strings.HasSuffix(value, args[0])
 	})
-	AddStringRule("starts_with", func(value string, args []string) error {
+	AddStringRule("starts_with", func(value string, args []string) bool {
 		if len(args) < 1 {
 			log.Print("starts_with must have 1 argument")
-			return nil
+			return false
 		}
-		if !strings.HasPrefix(value, args[0]) {
-			return fmt.Errorf("")
-		}
-		return nil
+		return strings.HasPrefix(value, args[0])
 	})
-	AddStringRule("ip_address", func(value string, args []string) error {
-		if net.ParseIP(value) == nil {
-			return fmt.Errorf("")
-		}
-		return nil
+	AddStringRule("ip_address", func(value string, args []string) bool {
+		return net.ParseIP(value) == nil
 	})
-	AddStringRule("json", func(value string, args []string) error {
+	AddStringRule("json", func(value string, args []string) bool {
 		var v any
 		err := json.Unmarshal([]byte(value), &v)
-		if err != nil {
-			return fmt.Errorf("")
-		}
-		return nil
+		return err != nil
 	})
-	AddStringRule("mac_address", func(value string, args []string) error {
+	AddStringRule("mac_address", func(value string, args []string) bool {
 		_, err := net.ParseMAC(value)
-		if err != nil {
-			return fmt.Errorf("")
-		}
-		return nil
+		return err != nil
 	})
-	AddStringRule("not_regex", func(value string, args []string) error {
+	AddStringRule("not_regex", func(value string, args []string) bool {
 		if len(args) < 1 {
 			log.Print("not_regex must have 1 argument")
-			return nil
+			return false
 		}
 		re, err := regexp.Compile(args[0])
 		if err != nil {
 			log.Printf("not_regex arg is not valid regex: %v", err)
-			return nil
+			return false
 		}
-		if re.MatchString(value) {
-			return fmt.Errorf("")
-		}
-		return nil
+		return !re.MatchString(value)
 	})
-	AddStringRule("regex", func(value string, args []string) error {
+	AddStringRule("regex", func(value string, args []string) bool {
 		if len(args) < 1 {
 			log.Print("regex must have 1 argument")
-			return nil
+			return false
 		}
 		re, err := regexp.Compile(args[0])
 		if err != nil {
 			log.Printf("regex arg is not valid regex: %v", err)
-			return nil
+			return false
 		}
-		if !re.MatchString(value) {
-			return fmt.Errorf("")
-		}
-		return nil
+		return re.MatchString(value)
 	})
-	AddStringRule("timezone", func(value string, args []string) error {
+	AddStringRule("timezone", func(value string, args []string) bool {
 		_, err := time.LoadLocation(value)
-		if err != nil {
-			return fmt.Errorf("")
-		}
-		return nil
+		return err != nil
 	})
-	AddStringRule("url", func(value string, args []string) error {
+	AddStringRule("url", func(value string, args []string) bool {
 		_, err := url.Parse(value)
-		if err != nil {
-			return fmt.Errorf("")
-		}
-		return nil
+		return err != nil
 	})
-	AddStringRule("uuid", func(value string, args []string) error {
+	AddStringRule("uuid", func(value string, args []string) bool {
 		_, err := uuid.Parse(value)
+		return err != nil
+	})
+	AddStringRule("length", func(value string, args []string) bool {
+		length, err := strconv.Atoi(args[0])
 		if err != nil {
-			return fmt.Errorf("")
+			log.Printf("length argument must be int, '%s' given", args[0])
+			return true
 		}
-		return nil
+		return len(value) == length
+	})
+	AddStringRule("length_between", func(value string, args []string) bool {
+		minLength, err := strconv.Atoi(args[0])
+		if err != nil {
+			log.Printf("length arguments must be int, '%s' given", args[0])
+			return true
+		}
+		maxLength, err := strconv.Atoi(args[1])
+		if err != nil {
+			log.Printf("length arguments must be int, '%s' given", args[1])
+			return true
+		}
+		return len(value) >= minLength && len(value) <= maxLength
 	})
 }
 
-func AddStringRule(key string, cb func(value string, args []string) error) {
-	AddRule(key, func(options *ValidationOptions) error {
+func AddStringRule(key string, cb func(value string, args []string) bool) {
+	AddRule(key, func(options *ValidationOptions) bool {
 		value, ok := options.Value.(string)
 		if !ok {
-			return nil
+			return true
 		}
 		return cb(value, options.Arguments)
 	})

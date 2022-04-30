@@ -36,7 +36,7 @@ func Validate(request *http.Request, keys []string, v any) error {
 	return nil
 }
 
-func validateField(name string, request *http.Request, keys []string, ft reflect.StructField, fv reflect.Value) ValidationError {
+func validateField(attribute string, request *http.Request, keys []string, ft reflect.StructField, fv reflect.Value) ValidationError {
 	validate, ok := ft.Tag.Lookup("validate")
 	if !ok {
 		return nil
@@ -47,12 +47,15 @@ func validateField(name string, request *http.Request, keys []string, ft reflect
 	rulesStr := strings.Split(validate, "|")
 	for _, ruleStr := range rulesStr {
 		ruleName, argsStr := split(ruleStr, ":")
-		args := strings.Split(argsStr, ",")
-
-		hasKey := includes(keys, name)
+		args := filterZeros(strings.Split(argsStr, ","))
+		hasKey := includes(keys, attribute)
 		if !hasKey {
 			if ruleName == "required" {
-				vErr.AddError(name, fmt.Errorf("required"))
+				vErr.AddError(attribute, getMessage(ruleName, &MessageOptions{
+					Attribute: attribute,
+					Value:     fv.Interface(),
+					Arguments: args,
+				}))
 			} else {
 				return nil
 			}
@@ -62,14 +65,18 @@ func validateField(name string, request *http.Request, keys []string, ft reflect
 				continue
 			}
 
-			err := rule(&rules.ValidationOptions{
+			valid := rule(&rules.ValidationOptions{
 				Value:     fv.Interface(),
 				Arguments: args,
 				Request:   request,
-				Name:      name,
+				Name:      attribute,
 			})
-			if err != nil {
-				vErr.AddError(name, err)
+			if !valid {
+				vErr.AddError(attribute, getMessage(ruleName, &MessageOptions{
+					Attribute: attribute,
+					Value:     fv.Interface(),
+					Arguments: args,
+				}))
 			}
 
 		}
@@ -121,4 +128,14 @@ func includes[T comparable](haystack []T, needle T) bool {
 		}
 	}
 	return false
+}
+func filterZeros[T comparable](array []T) []T {
+	newArray := []T{}
+	var zero T
+	for _, v := range array {
+		if v != zero {
+			newArray = append(newArray, v)
+		}
+	}
+	return newArray
 }

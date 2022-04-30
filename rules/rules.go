@@ -24,7 +24,7 @@ type ValidationOptions struct {
 	Name      string
 }
 
-type ValidationRule func(options *ValidationOptions) error
+type ValidationRule func(options *ValidationOptions) bool
 
 var rules = map[string]ValidationRule{}
 var initalized = false

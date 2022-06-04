@@ -66,52 +66,52 @@ func initStringRules() {
 		return strings.HasPrefix(value, args[0])
 	})
 	AddStringRule("ip_address", func(value string, args []string) bool {
-		return net.ParseIP(value) == nil
+		return net.ParseIP(value) != nil
 	})
 	AddStringRule("json", func(value string, args []string) bool {
 		var v any
 		err := json.Unmarshal([]byte(value), &v)
-		return err != nil
+		return err == nil
 	})
 	AddStringRule("mac_address", func(value string, args []string) bool {
 		_, err := net.ParseMAC(value)
-		return err != nil
+		return err == nil
 	})
 	AddStringRule("not_regex", func(value string, args []string) bool {
 		if len(args) < 1 {
 			log.Print("not_regex must have 1 argument")
-			return false
+			return true
 		}
 		re, err := regexp.Compile(args[0])
 		if err != nil {
 			log.Printf("not_regex arg is not valid regex: %v", err)
-			return false
+			return true
 		}
 		return !re.MatchString(value)
 	})
 	AddStringRule("regex", func(value string, args []string) bool {
 		if len(args) < 1 {
 			log.Print("regex must have 1 argument")
-			return false
+			return true
 		}
 		re, err := regexp.Compile(args[0])
 		if err != nil {
 			log.Printf("regex arg is not valid regex: %v", err)
-			return false
+			return true
 		}
 		return re.MatchString(value)
 	})
 	AddStringRule("timezone", func(value string, args []string) bool {
 		_, err := time.LoadLocation(value)
-		return err != nil
+		return err == nil
 	})
 	AddStringRule("url", func(value string, args []string) bool {
-		_, err := url.Parse(value)
-		return err != nil
+		u, err := url.Parse(value)
+		return err == nil && u.Host != "" && u.Scheme != ""
 	})
 	AddStringRule("uuid", func(value string, args []string) bool {
 		_, err := uuid.Parse(value)
-		return err != nil
+		return err == nil
 	})
 	AddStringRule("length", func(value string, args []string) bool {
 		length, err := strconv.Atoi(args[0])

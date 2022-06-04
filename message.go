@@ -63,15 +63,27 @@ func getMessage(ruleName string, options *MessageOptions) string {
 	if !ok {
 		return defaultMessage()
 	}
-	t, err := template.New(ruleName).Parse(message.String)
+
+	messageTemplate := ""
+
+	switch options.Value.(type) {
+	case int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64, float32, float64:
+		messageTemplate = message.Numeric
+	case string:
+		messageTemplate = message.String
+	default:
+		messageTemplate = message.String
+	}
+
+	t, err := template.New(ruleName).Parse(messageTemplate)
 	if err != nil {
-		log.Print(err)
+		log.Print(errors.Wrap(err, "failed to parse template"))
 		return defaultMessage()
 	}
 	buff := &bytes.Buffer{}
 	err = t.Execute(buff, options)
 	if err != nil {
-		log.Print(err)
+		log.Print(errors.Wrap(err, "failed to execute template"))
 		return defaultMessage()
 	}
 	return buff.String()

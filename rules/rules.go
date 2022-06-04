@@ -41,6 +41,7 @@ func initRules() {
 
 	initNumericRules()
 	initStringRules()
+	initGenericRules()
 }
 
 func GetRule(key string) (ValidationRule, bool) {
@@ -87,7 +88,7 @@ type TypeRule struct {
 	String   func(value string, arguments TypeRuleArguments) bool
 }
 
-func AddTypeRule(key string, rule *TypeRule) bool {
+func AddTypeRule(key string, rule *TypeRule) {
 	AddRule(key, func(options *ValidationOptions) bool {
 		if len(options.Arguments) < rule.ArgCount {
 			log.Printf("max must have %d argument(s)", rule.ArgCount)

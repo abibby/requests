@@ -134,6 +134,22 @@ func initStringRules() {
 		}
 		return len(value) >= minLength && len(value) <= maxLength
 	})
+	AddStringRule("in", func(value string, args []string) bool {
+		for _, arg := range args {
+			if value == arg {
+				return true
+			}
+		}
+		return false
+	})
+	AddStringRule("not_in", func(value string, args []string) bool {
+		for _, arg := range args {
+			if value == arg {
+				return false
+			}
+		}
+		return true
+	})
 }
 
 func AddStringRule(key string, cb func(value string, args []string) bool) {

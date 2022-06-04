@@ -1,9 +1,30 @@
 package rules
 
-// Date
-// After (Date)
-// After Or Equal (Date)
-// Before (Date)
-// Before Or Equal (Date)
-// Date Equals
-// Date Format
+import "time"
+
+func initDateRules() {
+	AddTypeRule("after", &TypeRule{
+		ArgCount: 1,
+		Time: func(value time.Time, arguments TypeRuleArguments) bool {
+			return value.After(arguments.GetTime(0))
+		},
+	})
+	AddTypeRule("after_or_equal", &TypeRule{
+		ArgCount: 1,
+		Time: func(value time.Time, arguments TypeRuleArguments) bool {
+			return !value.Before(arguments.GetTime(0))
+		},
+	})
+	AddTypeRule("before", &TypeRule{
+		ArgCount: 1,
+		Time: func(value time.Time, arguments TypeRuleArguments) bool {
+			return value.Before(arguments.GetTime(0))
+		},
+	})
+	AddTypeRule("before_or_equal", &TypeRule{
+		ArgCount: 1,
+		Time: func(value time.Time, arguments TypeRuleArguments) bool {
+			return !value.After(arguments.GetTime(0))
+		},
+	})
+}

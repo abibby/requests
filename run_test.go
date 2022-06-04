@@ -70,3 +70,20 @@ func TestRun_fails_with_invalid_type_from_body(t *testing.T) {
 		"foo": []string{"should be of type int"},
 	})
 }
+
+func TestRun_fails_with_message(t *testing.T) {
+	type Request struct {
+		Foo int `json:"foo" validate:"max:1"`
+	}
+
+	httpRequest := httptest.NewRequest("POST", "http://0.0.0.0/", bytes.NewBuffer([]byte(`{ "foo": 10 }`)))
+	structRequest := &Request{}
+
+	err := Run(httpRequest, structRequest)
+
+	assert.Error(t, err)
+	assert.IsType(t, ValidationError{}, err)
+	assert.Equal(t, err, ValidationError{
+		"foo": []string{"The foo must not be greater than 1."},
+	})
+}

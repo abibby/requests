@@ -5,20 +5,8 @@ import (
 	"net/http"
 	"reflect"
 	"strconv"
+	"time"
 )
-
-// type Numeric interface {
-// 	uint8
-// 	uint16
-// 	uint32
-// 	uint64
-// 	int8
-// 	int16
-// 	int32
-// 	int64
-// 	float32
-// 	float64
-// }
 
 type ValidationOptions struct {
 	Value     any
@@ -42,6 +30,8 @@ func initRules() {
 	initNumericRules()
 	initStringRules()
 	initGenericRules()
+	initBoolRules()
+	initDateRules()
 }
 
 func GetRule(key string) (ValidationRule, bool) {
@@ -80,12 +70,25 @@ func (a TypeRuleArguments) GetFloat(i int) float64 {
 	return val
 }
 
+func (a TypeRuleArguments) GetTime(i int) time.Time {
+	s := a.GetString(i)
+	t, _ := time.Parse(time.RFC3339, s)
+	return t
+}
+
+func (a TypeRuleArguments) GetBoolean(i int) bool {
+	s := a.GetString(i)
+	return s == "1" || s == "true" || s == "yes"
+}
+
 type TypeRule struct {
 	ArgCount int
 	Int      func(value int64, arguments TypeRuleArguments) bool
 	Uint     func(value uint64, arguments TypeRuleArguments) bool
 	Float    func(value float64, arguments TypeRuleArguments) bool
 	String   func(value string, arguments TypeRuleArguments) bool
+	Bool     func(value bool, arguments TypeRuleArguments) bool
+	Time     func(value time.Time, arguments TypeRuleArguments) bool
 }
 
 func AddTypeRule(key string, rule *TypeRule) {
@@ -121,9 +124,9 @@ func AddTypeRule(key string, rule *TypeRule) {
 				return true
 			}
 			return rule.String(val.String(), options.Arguments)
-		default:
-			log.Printf("using a numeric rule on a non numeric field")
-			return true
 		}
+
+		log.Printf("using a numeric rule on a non numeric field")
+		return true
 	})
 }

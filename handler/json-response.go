@@ -33,7 +33,9 @@ func (r *JSONResponse) AddHeader(key, value string) *JSONResponse {
 }
 
 func (r *JSONResponse) Respond(w http.ResponseWriter) error {
-	w.WriteHeader(r.status)
+	if r.status != 0 {
+		w.WriteHeader(r.status)
+	}
 	for k, v := range r.headers {
 		w.Header().Set(k, v)
 	}

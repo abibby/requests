@@ -12,15 +12,15 @@ func Handler[TRequest any](callback func(r *TRequest) (any, error)) http.Handler
 		var req TRequest
 		err := validate.Run(r, &req)
 		if err, ok := err.(*validate.ValidationError); ok {
-			respond(w, errorResponse(err, http.StatusUnprocessableEntity))
+			respond(w, ErrorResponse(err, http.StatusUnprocessableEntity))
 			return
 		} else if err != nil {
-			respond(w, errorResponse(err, http.StatusInternalServerError))
+			respond(w, ErrorResponse(err, http.StatusInternalServerError))
 			return
 		}
 		resp, err := callback(&req)
 		if err != nil {
-			respond(w, errorResponse(err, http.StatusInternalServerError))
+			respond(w, ErrorResponse(err, http.StatusInternalServerError))
 			return
 		}
 		if resp, ok := resp.(Response); ok {
@@ -31,7 +31,7 @@ func Handler[TRequest any](callback func(r *TRequest) (any, error)) http.Handler
 	})
 }
 
-func errorResponse(err error, status int) *JSONResponse {
+func ErrorResponse(err error, status int) *JSONResponse {
 	return NewJSONResponse(map[string]string{
 		"error": err.Error(),
 	}).SetStatus(status)

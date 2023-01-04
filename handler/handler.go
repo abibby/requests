@@ -3,6 +3,7 @@ package handler
 import (
 	"log"
 	"net/http"
+	"reflect"
 
 	"github.com/abibby/validate"
 )
@@ -18,6 +19,10 @@ func Handler[TRequest any](callback func(r *TRequest) (any, error)) http.Handler
 			respond(w, ErrorResponse(err, http.StatusInternalServerError))
 			return
 		}
+
+		injectRequest(&req, r)
+		injectResponseWriter(&req, w)
+
 		resp, err := callback(&req)
 		if err != nil {
 			respond(w, ErrorResponse(err, http.StatusInternalServerError))
@@ -42,4 +47,31 @@ func respond(w http.ResponseWriter, r Response) {
 	if err != nil {
 		log.Print(err)
 	}
+}
+
+func injectRequest[TRequest any](req TRequest, httpR *http.Request) {
+	v := reflect.ValueOf(req).Elem()
+
+	for i := 0; i < v.NumField(); i++ {
+		f := v.Field(i)
+		if (f.Type() != reflect.TypeOf(&http.Request{})) {
+			continue
+		}
+		f.Set(reflect.ValueOf(httpR))
+	}
+
+}
+
+func injectResponseWriter[TRequest any](req TRequest, httpRW http.ResponseWriter) {
+	v := reflect.ValueOf(req).Elem()
+
+	for i := 0; i < v.NumField(); i++ {
+		f := v.Field(i)
+		var rw http.ResponseWriter
+		if !f.Type().Implements(reflect.TypeOf(&rw).Elem()) {
+			continue
+		}
+		f.Set(reflect.ValueOf(httpRW))
+	}
+
 }

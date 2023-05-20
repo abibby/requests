@@ -13,7 +13,7 @@ type ValidationError map[string][]string
 var _ error = ValidationError{}
 
 func (e ValidationError) Error() string {
-	return ""
+	return "validation error"
 }
 
 func (e ValidationError) HasErrors() bool {

@@ -10,6 +10,10 @@ import (
 	"github.com/pkg/errors"
 )
 
+type Validator interface {
+	Valid() error
+}
+
 func Validate(request *http.Request, keys []string, v any) error {
 	s, err := getStruct(reflect.ValueOf(v))
 	if err != nil {
@@ -43,6 +47,13 @@ func validateField(attribute string, request *http.Request, keys []string, ft re
 	}
 
 	vErr := ValidationError{}
+
+	if validator, ok := fv.Interface().(Validator); ok {
+		err := validator.Valid()
+		if err != nil {
+			vErr.AddError(attribute, err.Error())
+		}
+	}
 
 	rulesStr := strings.Split(validate, "|")
 	for _, ruleStr := range rulesStr {
@@ -91,6 +102,11 @@ func getName(f reflect.StructField) string {
 	}
 
 	name, ok = f.Tag.Lookup("query")
+	if ok {
+		return name
+	}
+
+	name, ok = f.Tag.Lookup("di")
 	if ok {
 		return name
 	}

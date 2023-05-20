@@ -12,13 +12,14 @@ import (
 
 func Run(requestHttp *http.Request, requestStruct any) error {
 	var decoder = schema.NewDecoder()
+	decoder.IgnoreUnknownKeys(true)
 	decoder.SetAliasTag("query")
 
 	keys := []string{}
 
 	err := decoder.Decode(requestStruct, requestHttp.URL.Query())
-	if err, ok := err.(schema.MultiError); ok {
-		return fromSchemaMultiError(err)
+	if multiErr, ok := err.(schema.MultiError); ok {
+		return fromSchemaMultiError(multiErr)
 	} else if err != nil {
 		return errors.Wrap(err, "Could decode query string")
 	}
@@ -33,8 +34,8 @@ func Run(requestHttp *http.Request, requestStruct any) error {
 		body := io.TeeReader(requestHttp.Body, &bodyBuff)
 
 		err := json.NewDecoder(body).Decode(requestStruct)
-		if err, ok := err.(*json.UnmarshalTypeError); ok {
-			return fromJsonUnmarshalTypeError(err, requestStruct)
+		if jsonErr, ok := err.(*json.UnmarshalTypeError); ok {
+			return fromJsonUnmarshalTypeError(jsonErr, requestStruct)
 		} else if err != nil {
 			return errors.Wrap(err, "Could decode body")
 		}

@@ -87,3 +87,16 @@ func TestRun_fails_with_message(t *testing.T) {
 		"foo": []string{"The foo must not be greater than 1."},
 	})
 }
+
+func TestRun_doesnt_fail_with_extra_query_params(t *testing.T) {
+	type Request struct {
+		Foo int `json:"foo"`
+	}
+
+	httpRequest := httptest.NewRequest("GET", "http://0.0.0.0/?bar=foo", http.NoBody)
+	structRequest := &Request{}
+
+	err := Run(httpRequest, structRequest)
+
+	assert.NoError(t, err)
+}

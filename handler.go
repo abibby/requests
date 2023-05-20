@@ -1,48 +1,55 @@
-package handler
+package validate
 
 import (
 	"log"
 	"net/http"
 	"reflect"
-
-	"github.com/abibby/validate"
 )
 
-func Handler[TRequest any](callback func(r *TRequest) (any, error)) http.Handler {
+func Handler[TRequest, TResponse any](callback func(r *TRequest) (TResponse, error)) http.HandlerFunc {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var req TRequest
-		err := validate.Run(r, &req)
-		if err, ok := err.(*validate.ValidationError); ok {
-			respond(w, ErrorResponse(err, http.StatusUnprocessableEntity))
+		err := Run(r, &req)
+		if validationErr, ok := err.(ValidationError); ok {
+			respond(w, ErrorResponse(validationErr, http.StatusUnprocessableEntity, r))
 			return
 		} else if err != nil {
-			respond(w, ErrorResponse(err, http.StatusInternalServerError))
+			respond(w, ErrorResponse(err, http.StatusInternalServerError, r))
 			return
 		}
 
 		injectRequest(&req, r)
 		injectResponseWriter(&req, w)
+		err = di(&req, r)
+		if err != nil {
+			if responder, ok := err.(Responder); ok {
+				respond(w, responder)
+			} else {
+				respond(w, ErrorResponse(err, http.StatusInternalServerError, r))
+			}
+			return
+		}
 
 		resp, err := callback(&req)
 		if err != nil {
-			respond(w, ErrorResponse(err, http.StatusInternalServerError))
+			if responder, ok := err.(Responder); ok {
+				respond(w, responder)
+			} else {
+				respond(w, ErrorResponse(err, http.StatusInternalServerError, r))
+			}
 			return
 		}
-		if resp, ok := resp.(Response); ok {
-			respond(w, resp)
+
+		var anyResp any = resp
+		if responder, ok := anyResp.(Responder); ok {
+			respond(w, responder)
 			return
 		}
 		respond(w, NewJSONResponse(resp))
 	})
 }
 
-func ErrorResponse(err error, status int) *JSONResponse {
-	return NewJSONResponse(map[string]string{
-		"error": err.Error(),
-	}).SetStatus(status)
-}
-
-func respond(w http.ResponseWriter, r Response) {
+func respond(w http.ResponseWriter, r Responder) {
 	err := r.Respond(w)
 	if err != nil {
 		log.Print(err)

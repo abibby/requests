@@ -1,4 +1,4 @@
-package handler
+package validate
 
 import (
 	"encoding/json"
@@ -11,14 +11,12 @@ type JSONResponse struct {
 	headers map[string]string
 }
 
-var _ Response = &JSONResponse{}
+var _ Responder = &JSONResponse{}
 
 func NewJSONResponse(data any) *JSONResponse {
 	return &JSONResponse{
-		data: data,
-		headers: map[string]string{
-			"Content-Type": "application/json",
-		},
+		data:    data,
+		headers: map[string]string{},
 	}
 }
 
@@ -36,6 +34,7 @@ func (r *JSONResponse) Respond(w http.ResponseWriter) error {
 	if r.status != 0 {
 		w.WriteHeader(r.status)
 	}
+	w.Header().Set("Content-Type", "application/json")
 	for k, v := range r.headers {
 		w.Header().Set(k, v)
 	}

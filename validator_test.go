@@ -1,9 +1,9 @@
-package validate
+package requests
 
 import (
 	"testing"
 
-	"github.com/abibby/validate/rules"
+	"github.com/abibby/requests/rules"
 	"github.com/stretchr/testify/assert"
 )
 

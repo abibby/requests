@@ -1,4 +1,4 @@
-package validate
+package requests
 
 import (
 	"fmt"
@@ -6,7 +6,7 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/abibby/validate/rules"
+	"github.com/abibby/requests/rules"
 	"github.com/pkg/errors"
 )
 

@@ -9,7 +9,7 @@ import (
 	"github.com/abibby/bob/dialects/sqlite"
 	"github.com/abibby/bob/migrate"
 	"github.com/abibby/bob/models"
-	"github.com/abibby/validate"
+	"github.com/abibby/requests"
 	"github.com/gorilla/mux"
 	"github.com/jmoiron/sqlx"
 
@@ -26,8 +26,8 @@ type ListRequest struct {
 	Request *http.Request
 }
 
-var list = validate.Handler(func(r *ListRequest) ([]*Foo, error) {
-	tx := validate.UseTx(r.Request)
+var list = requests.Handler(func(r *ListRequest) ([]*Foo, error) {
+	tx := requests.UseTx(r.Request)
 
 	foos, err := bob.From[*Foo]().Get(tx)
 	if err != nil {
@@ -41,8 +41,8 @@ type AddRequest struct {
 	Name    string `query:"name"`
 }
 
-var add = validate.Handler(func(r *AddRequest) (*Foo, error) {
-	tx := validate.UseTx(r.Request)
+var add = requests.Handler(func(r *AddRequest) (*Foo, error) {
+	tx := requests.UseTx(r.Request)
 	foo := &Foo{Name: r.Name}
 	err := bob.Save(tx, foo)
 	if err != nil {
@@ -55,7 +55,7 @@ type GetRequest struct {
 	Foo *Foo `di:"foo"`
 }
 
-var get = validate.Handler(func(r *GetRequest) (*Foo, error) {
+var get = requests.Handler(func(r *GetRequest) (*Foo, error) {
 	return r.Foo, nil
 })
 
@@ -77,7 +77,7 @@ func main() {
 		panic(err)
 	}
 
-	r.Use(validate.WithDB(db))
+	r.Use(requests.WithDB(db))
 
 	r.HandleFunc("/foo", list)
 	r.HandleFunc("/foo/create", add)

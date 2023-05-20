@@ -1,4 +1,4 @@
-module github.com/abibby/validate
+module github.com/abibby/requests
 
 go 1.18
 
